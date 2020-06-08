@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>log web see see </title>
+<script src="//cdn.bootcss.com/jquery/2.1.4/jquery.js"></script>
+<style>
+    html,body
+    {
+        height:100%;
+        width:100%;
+    }
+    .c1{
+    	color:#aaa;
+    }
+    .c2{
+    	color:yellow;
+    }
+    .c3{
+    	color:hotpink;
+    }
+    .c4{
+    	color:#FBFBFF;
+    }
+    .c5{
+    	color:cyan;
+    }
+</style>
+</head>
+<body>
+ <select id="log" onchange="changelog()">
+   	  <option value="log">日志查看</option>
+	  <option value ="catalina.out">catalina.out</option>
+	  <option value ="manager-log">manager-log</option>
+	</select>
+    <div id="log-container" style="height: 90%; overflow-y: scroll; background: #333; color: #aaa; padding: 10px;">
+        <div>
+        日志在线查看：<br/>
+        1.支持回车键盘添加换行，方便查看新日志<br/>
+        2.支持ctrl+c取消日志刷新，重新看需要刷新当前页面<br/>
+        3.支持'-'输出(作者爱好)<br/>
+        4.添加不同颜色输出<br/>
+        5.防止占用更多内存，超过1百万个字符，会删除最前面的1百万个字符(百万还是必须的：)<br/>
+        </div>
+    </div>
+</body>
+<script>
+var websocket =  null;
+var color_index =1;
+var bigSize = 1000000;//百万
+    $(document).ready(function() {
+    	var url  = 'ws://'+window.location.host+'/log/websocket/log.ws';
+        // 指定websocket路径
+        websocket = new WebSocket(url);
+        websocket.onmessage = function(event) {
+        	// 接收服务端的实时日志并添加到HTML页面中
+            if(color_index>=5){
+            	color_index =1;
+            }else{
+            	color_index++;
+            }
+            var content  =$("#log-container div").html();
+           
+            if(content.length>bigSize){
+            	$("#log-container div").html(content.substring(bigSize));
+            }
+            $("#log-container div").append("<span class='c"+color_index+"'>"+event.data+ "</span><p> </p>");
+            // 滚动条滚动到最低部
+            $("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
+        };
+        websocket.onclose = function(evt) { 
+            console.log("close");
+        }; 
+    });  
+    $(document).keydown(function(){
+		   console.log(event.keyCode);
+        if (event.keyCode == 13) {//回车键的键值为13
+        	 $("#log-container div").append(  "<br/>");
+             // 滚动条滚动到最低部
+          $("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
+        }else if(event.ctrlKey && event.keyCode  == 67) {  //ctrl+c 
+     	  $("#log-container div").append( "取消日志刷新<p> </p>");
+     	  websocket.send("close"); 
+     	  websocket.close(); 
+        }  else if( event.keyCode  == 189) {  //---
+     	  $("#log-container div").append( "-");
+     	  $("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
+        }  
+        
+    });
+ function changelog(){
+ 	console.log( $("#log").val() );
+     if(websocket!=null){
+     	$("#log-container div").html("");
+     	websocket.send( $("#log").val()); 
+     	
+     }
+ }
+</script>
+</body>
+</html>

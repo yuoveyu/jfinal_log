@@ -1,0 +1,7 @@
+# true 值支持热加载
+undertow.devMode=true
+undertow.port=8070
+undertow.host=0.0.0.0
+# 绝大部分情况不建议配置 context path
+undertow.contextPath=/log
+undertow.resourcePath = classpath:static
